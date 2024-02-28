@@ -6,139 +6,21 @@ SKIPUNZIP=1
 ASH_STANDALONE=1
 module_path="/data/adb/xray"
 
-chooseport_legacy() {
-    # Keycheck binary by someone755 @Github, idea for code below by Zappo @xda-developers
-    # Calling it first time detects previous input. Calling it second time will do what we want
-    [ "$1" ] && local delay=$1 || local delay=15
-    local error=false
-    while true; do
-        timeout 0 ${TMPDIR}/keycheck
-        timeout $delay ${TMPDIR}/keycheck
-        local sel=$?
-        if [ $sel -eq 42 ]; then
-            return 0
-        elif [ $sel -eq 41 ]; then
-            return 1
-        elif $error; then
-            abort "- Volume key not detected!"
-        else
-            error=true
-            ui_print "- Volume key not detected. Try again"
-        fi
-    done
-}
-
-chooseport() {
-    # Original idea by chainfire and ianmacd @xda-developers
-    [ "$1" ] && local delay=$1 || local delay=15
-    local error=false
-    while true; do
-        local count=0
-        while true; do
-            timeout 1 /system/bin/getevent -lqc 1 2>&1 >$TMPDIR/events &
-            sleep 0.5
-            if ($(grep -q 'KEY_VOLUMEUP *DOWN' $TMPDIR/events)); then
-                return 0
-            elif ($(grep -q 'KEY_VOLUMEDOWN *DOWN' $TMPDIR/events)); then
-                return 1
-            fi
-            count=$((count + 1))
-            [ $count -gt 29 ] && break
-        done
-        if $error; then
-            # abort "Volume key not detected!"
-            ui_print "- Volume key not detected. Trying keycheck method"
-            export chooseport=chooseport_legacy VKSEL=chooseport_legacy
-            chooseport_legacy $delay
-            return $?
-        else
-            error=true
-            ui_print "- Volume key not detected. Try again"
-        fi
-    done
-}
-
 VKSEL=chooseport
 
 installCore() {
     case "$1" in
-    v2ray)
-        sed -i 's/coreType: .*/coreType: v2ray/g' ${module_path}/xrayhelper.yml
-        sed -i 's/corePath: .*/corePath: \/data\/adb\/xray\/bin\/v2ray/g' ${module_path}/xrayhelper.yml
-        sed -i 's/coreConfig: .*/coreConfig: \/data\/adb\/xray\/v2ray.v5.json/g' ${module_path}/xrayhelper.yml
-        ui_print "- Install geodata asset"
-        ${module_path}/bin/xrayhelper -c ${module_path}/xrayhelper.yml update geodata
-        ui_print "- Install v2ray core"
-        ${module_path}/bin/xrayhelper -c ${module_path}/xrayhelper.yml update core
-        ;;
-    sing-box)
-        sed -i 's/coreType: .*/coreType: sing-box/g' ${module_path}/xrayhelper.yml
-        sed -i 's/corePath: .*/corePath: \/data\/adb\/xray\/bin\/sing-box/g' ${module_path}/xrayhelper.yml
-        sed -i 's/coreConfig: .*/coreConfig: \/data\/adb\/xray\/singconfs\//g' ${module_path}/xrayhelper.yml
-        ui_print "- Install geodata asset"
-        ${module_path}/bin/xrayhelper -c ${module_path}/xrayhelper.yml update geodata
-        ui_print "- Install sing-box core"
-        ${module_path}/bin/xrayhelper -c ${module_path}/xrayhelper.yml update core
-        ;;
-    mihomo)
-        sed -i 's/coreType: .*/coreType: mihomo/g' ${module_path}/xrayhelper.yml
-        sed -i 's/corePath: .*/corePath: \/data\/adb\/xray\/bin\/mihomo/g' ${module_path}/xrayhelper.yml
-        sed -i 's/coreConfig: .*/coreConfig: \/data\/adb\/xray\/mihomoconfs\//g' ${module_path}/xrayhelper.yml
-        sed -i 's/template: .*/template: \/data\/adb\/xray\/mihomoconfs\/template\.yaml/g' ${module_path}/xrayhelper.yml
-        ui_print "- Install yacd-meta"
-        ${module_path}/bin/xrayhelper -c ${module_path}/xrayhelper.yml update yacd-meta
-        ui_print "- Install mihomo(clash.meta) core"
-        ${module_path}/bin/xrayhelper -c ${module_path}/xrayhelper.yml update core
-        ;;
     xray)
         sed -i 's/coreType: .*/coreType: xray/g' ${module_path}/xrayhelper.yml
         sed -i 's/corePath: .*/corePath: \/data\/adb\/xray\/bin\/xray/g' ${module_path}/xrayhelper.yml
         sed -i 's/coreConfig: .*/coreConfig: \/data\/adb\/xray\/confs\//g' ${module_path}/xrayhelper.yml
-        ui_print "- Install geodata asset"
-        ${module_path}/bin/xrayhelper -c ${module_path}/xrayhelper.yml update geodata
-        ui_print "- Install xray core"
-        ${module_path}/bin/xrayhelper -c ${module_path}/xrayhelper.yml update core
-        ;;
-    skip)
-        ui_print "- Skip core installation"
-        ui_print "- You need install core and configure xrayhelper.yml after module installation"
-        ;;
-    *)
-        installCore_VK
+        ui_print "- Release geodata asset"
+        mkdir -p ${module_path}/etc/data
+        unzip -j -o "${ZIPFILE}" 'xray/etc/data/*' -d ${module_path}/data >&2
+        ui_print "- Release Core"
+        unzip -j -o "${ZIPFILE}" "xray/bin/${ARCH}/xray" -d ${module_path}/bin >&2
         ;;
     esac
-}
-
-installCore_VK() {
-    ui_print
-    ui_print "- Do you need install core online?"
-    ui_print "* VOL+ = YES, VOL- = NO *"
-    if $VKSEL; then
-        ui_print
-        ui_print "- Please select your core"
-        ui_print "* VOL+ = xray/v2ray, VOL- = sing-box/mihomo(clash.meta) *"
-        if $VKSEL; then
-            ui_print
-            ui_print "- Please select xray or v2ray"
-            ui_print "* VOL+ = xray, VOL- = v2ray *"
-            if $VKSEL; then
-                installCore xray
-            else
-                installCore v2ray
-            fi
-        else
-            ui_print
-            ui_print "- Please select sing-box or mihomo(clash.meta)"
-            ui_print "* VOL+ = sing-box, VOL- = mihomo(clash.meta) *"
-            if $VKSEL; then
-                installCore sing-box
-            else
-                installCore mihomo
-            fi
-        fi
-    else
-        installCore skip
-    fi
 }
 
 installModule() {
@@ -174,7 +56,7 @@ installModule() {
     if [ -f /sdcard/xray4magisk.setup ]; then
         installCore $(head -1 /sdcard/xray4magisk.setup)
     else
-        installCore_VK
+        installCore xray
     fi
     ui_print "- Release scripts"
     mkdir -p ${module_path}/run
