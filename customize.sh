@@ -28,6 +28,7 @@ installModule() {
     mkdir -p ${module_path}/bin
     unzip -j -o "${ZIPFILE}" "xray/bin/${ARCH}/xrayhelper" -d ${module_path}/bin >&2
     set_perm ${module_path}/bin/xrayhelper 0 0 0755
+    set_perm ${module_path}/bin/xray 0 0 0755
     [ -f ${module_path}/xrayhelper.yml ] ||
         unzip -j -o "${ZIPFILE}" 'xray/etc/xrayhelper.yml' -d ${module_path} >&2
 
