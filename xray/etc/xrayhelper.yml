@@ -5,6 +5,9 @@ xrayHelper:
     dataDir: /data/adb/xray/data/
     runDir: /data/adb/xray/run/
     proxyTag: proxy
+    subList:
+        - https://example.com/v2rayNg
+        - clash+https://example.com/mihomo
 proxy:
     method: tproxy
     tproxyPort: 65535
@@ -13,6 +16,14 @@ proxy:
     enableIPv6: false
     autoDNSStrategy: true
     mode: blacklist
+    pkgList:
+        - 'com.tencent.*'
+        - 'com.baidu.*'
+        - 'com.netease.*'
+        - 'com.taobao.*'
+        - 'com.bilibili.*'
+        - 'cn.*'
+        - '*china*'
     apList:
         - wlan+
         - rndis+
